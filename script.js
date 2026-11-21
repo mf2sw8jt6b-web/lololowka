@@ -1,89 +1,30 @@
-// Сюжет новели. Кожен блок - це окрема сцена.
-const story = {
-    start: {
-        character: "Лололошка",
-        text: "Ох, цей річний звіт займає набагато більше часу, ніж я розраховував. Джоне, ти вже закінчив свою частину?",
-        nameColor: "#4fc3f7", // Блакитний колір для Лололошки
-        choices: [
-            { text: "Подивитися на Джона", next: "john_reply" }
-        ]
-    },
-    john_reply: {
-        character: "Джон",
-        text: "Звісно! Я ж геній, ти забув? Моя частина була готова ще до обіду. Тепер я просто насолоджуюсь цією чудовою офісною кавою і своєю бездоганністю.",
-        nameColor: "#ff9800", // Помаранчевий колір для Джона
-        choices: [
-            { text: "Попросити Джона про допомогу", next: "ask_help" },
-            { text: "Продовжити робити звіт самому", next: "do_alone" }
-        ]
-    },
-    ask_help: {
-        character: "Лололошка",
-        text: "Можеш трохи допомогти мені з таблицями? Бос чекає на ці документи до кінця робочого дня.",
-        nameColor: "#4fc3f7",
-        choices: [
-            { text: "Чекати на відповідь", next: "john_agrees" }
-        ]
-    },
-    john_agrees: {
-        character: "Джон",
-        text: "Ну добре, добре... Тільки тому, що ми напарники. Але запам'ятай: з тебе велика порція лате на вихідних!",
-        nameColor: "#ff9800",
-        choices: [
-            { text: "Почати спочатку", next: "start" }
-        ]
-    },
-    do_alone: {
-        character: "Лололошка",
-        text: "Гаразд, я сам впораюся. Не хочу відволікати 'генія' від його важливого відпочинку.",
-        nameColor: "#4fc3f7",
-        choices: [
-            { text: "Продовжити", next: "john_smirks" }
-        ]
-    },
-    john_smirks: {
-        character: "Джон",
-        text: "Як знаєш! Але якщо що — я тут, сиджу поруч і виглядаю неймовірно у своєму білому костюмі.",
-        nameColor: "#ff9800",
-        choices: [
-            { text: "Почати спочатку", next: "start" }
-        ]
-    }
-};
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Візуальна Новела</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-let currentNode = "start";
-
-// Отримуємо елементи з HTML
-const characterNameEl = document.getElementById("character-name");
-const dialogueTextEl = document.getElementById("dialogue-text");
-const choicesContainerEl = document.getElementById("choices-container");
-
-// Функція для відображення поточної сцени
-function renderNode(nodeId) {
-    const node = story[nodeId];
-
-    // Оновлюємо ім'я та його колір
-    characterNameEl.textContent = node.character;
-    characterNameEl.style.color = node.nameColor;
-    
-    // Оновлюємо текст діалогу
-    dialogueTextEl.textContent = node.text;
-
-    // Очищаємо старі кнопки
-    choicesContainerEl.innerHTML = "";
-
-    // Створюємо нові кнопки вибору
-    node.choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-btn";
-        btn.textContent = choice.text;
+    <!-- Контейнер гри (можна приховати доки користувач не увійде через Firebase) -->
+    <div id="game-container">
+        <!-- Фонове зображення сцени -->
+        <img id="scene-image" src="https://via.placeholder.com/800x600/2c2f33/ffffff?text=Background+Scene" alt="Сцена">
         
-        // При натисканні переходимо до наступної сцени
-        btn.onclick = () => renderNode(choice.next);
-        
-        choicesContainerEl.appendChild(btn);
-    });
-}
+        <!-- Вікно діалогу -->
+        <div id="dialogue-box">
+            <div id="character-name">Ім'я персонажа</div>
+            <div id="dialogue-text">Тут буде відображатися текст діалогу. Ви можете змінювати його за допомогою JavaScript.</div>
+            
+            <!-- Контейнер для кнопок вибору -->
+            <div id="choices-container">
+                <button class="choice-btn">Перший варіант відповіді</button>
+                <button class="choice-btn">Другий варіант відповіді</button>
+            </div>
+        </div>
+    </div>
 
-// Запускаємо гру з початкової сцени
-renderNode(currentNode);
+</body>
+</html>
