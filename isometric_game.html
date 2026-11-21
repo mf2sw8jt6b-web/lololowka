@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Белый Город - Изометрия 3/4</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .text-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            color: #333;
+            max-width: 300px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(200,200,200,0.3);
+        }
+        h2 { margin: 0 0 10px 0; font-size: 1.2em; color: #111; }
+        p { margin: 5px 0; font-size: 0.95em; color: #555; }
+    </style>
+    <!-- Подключаем библиотеку 3D графики Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="ui-layer">
+        <div class="text-box">
+            <h2>Управление</h2>
+            <p>Используйте <b>W, A, S, D</b> или <b>Стрелочки</b> для бега.</p>
+            <p>Исследуйте район. Двери домов находятся напротив друг друга.</p>
+        </div>
+    </div>
+
+    <script>
+        // 1. Инициализация сцены
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f5f5); // Светло-серый/белый фон для контраста
+        scene.fog = new THREE.Fog(0xf5f5f5, 20, 60); // Легкий туман для глубины
+
+        // 2. Настройка камеры (Изометрическая - Orthographic 3/4)
+        const aspect = window.innerWidth / window.innerHeight;
+        const d = 14; // Масштаб (отдаление камеры)
+        const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+        
+        // 3. Рендерер
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Мягкие, красивые тени
+        document.body.appendChild(renderer.domElement);
+
+        // 4. Освещение (Критично для полностью белого дизайна, чтобы видеть объемы)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        // Свет падает немного сбоку, чтобы подчеркнуть объем белых фигур
+        dirLight.position.set(20, 30, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -25;
+        dirLight.shadow.camera.right = 25;
+        dirLight.shadow.camera.top = 25;
+        dirLight.shadow.camera.bottom = -25;
+        dirLight.shadow.bias = -0.0001;
+        scene.add(dirLight);
+
+        // 5. Земля
+        const groundGeo = new THREE.PlaneGeometry(200, 200);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // 6. Материалы для объектов
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+        const doorMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.5 }); // Чуть темнее для видимости дверей
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 }); // Игрок немного блестит
+
+        // 7. Создание домов (комнат)
+        const roomGeo = new THREE.BoxGeometry(6, 4, 6);
+        const doorGeo = new THREE.BoxGeometry(1.5, 2.5, 0.2);
+
+        function createRoom(x, z, isTopRow) {
+            const group = new THREE.Group();
+            
+            // Сама комната (белый куб)
+            const room = new THREE.Mesh(roomGeo, wallMat);
+            room.position.y = 2; // Половина высоты, чтобы стоять на земле
+            room.castShadow = true;
+            room.receiveShadow = true;
+            group.add(room);
+
+            // Дверь
+            const door = new THREE.Mesh(doorGeo, doorMat);
+            // Если верхний ряд, дверь смотрит на +Z. Если нижний, на -Z.
+            const doorZOffset = isTopRow ? 3.01 : -3.01;
+            door.position.set(0, 1.25, doorZOffset);
+            group.add(door);
+
+            group.position.set(x, 0, z);
+            scene.add(group);
+        }
+
+        // Расстановка 6 комнат (как дома в Америке вдоль улицы)
+        const streetWidth = 3; // Половина ширины улицы
+        const roomZOffset = 3 + streetWidth; // Половина комнаты (3) + улица
+
+        // 3 комнаты выше в ряд
+        createRoom(-10, -roomZOffset, true);
+        createRoom(0, -roomZOffset, true);
+        createRoom(10, -roomZOffset, true);
+
+        // 3 комнаты ниже (двери напротив верхних)
+        createRoom(-10, roomZOffset, false);
+        createRoom(0, roomZOffset, false);
+        createRoom(10, roomZOffset, false);
+
+        // 8. Игрок
+        const playerGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.set(0, 0.8, 0); // Начальная позиция на улице между домами
+        player.castShadow = true;
+        scene.add(player);
+
+        // 9. Логика управления
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; if(keys.hasOwnProperty(e.key)) keys[e.key] = true;});
+        window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        const speed = 0.15;
+
+        // Позиция камеры относительно игрока (Изометрия 3/4)
+        const camOffsetX = 20;
+        const camOffsetY = 20;
+        const camOffsetZ = 20;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Движение игрока (адаптировано под изометрический вид)
+            let moveX = 0;
+            let moveZ = 0;
+
+            if (keys.w || keys.ArrowUp) { moveX -= speed; moveZ -= speed; }       // Вверх-влево по экрану
+            if (keys.s || keys.ArrowDown) { moveX += speed; moveZ += speed; }     // Вниз-вправо
+            if (keys.a || keys.ArrowLeft) { moveX -= speed; moveZ += speed; }     // Вниз-влево
+            if (keys.d || keys.ArrowRight) { moveX += speed; moveZ -= speed; }    // Вверх-вправо
+
+            // Нормализация скорости при диагональном движении
+            if (moveX !== 0 && moveZ !== 0) {
+                const length = Math.sqrt(moveX*moveX + moveZ*moveZ);
+                moveX = (moveX / length) * speed;
+                moveZ = (moveZ / length) * speed;
+            }
+
+            // Простая физика (чтобы не проходить сквозь стены)
+            const nextX = player.position.x + moveX;
+            const nextZ = player.position.z + moveZ;
+            
+            let canMoveX = true;
+            let canMoveZ = true;
+
+            const checkCollision = (x, z) => {
+                const margin = 1.0; // Радиус игрока + буфер
+                const isInsideZTop = z < -roomZOffset + 3 + margin && z > -roomZOffset - 3 - margin;
+                const isInsideZBot = z < roomZOffset + 3 + margin && z > roomZOffset - 3 - margin;
+                const isInsideX1 = x < -10 + 3 + margin && x > -10 - 3 - margin;
+                const isInsideX2 = x < 0 + 3 + margin && x > 0 - 3 - margin;
+                const isInsideX3 = x < 10 + 3 + margin && x > 10 - 3 - margin;
+                
+                return (isInsideZTop || isInsideZBot) && (isInsideX1 || isInsideX2 || isInsideX3);
+            };
+
+            if (checkCollision(nextX, player.position.z)) canMoveX = false;
+            if (checkCollision(player.position.x, nextZ)) canMoveZ = false;
+
+            if (canMoveX) player.position.x = nextX;
+            if (canMoveZ) player.position.z = nextZ;
+
+            // Обновление позиции камеры (плавное следование за игроком)
+            camera.position.x = player.position.x + camOffsetX;
+            camera.position.y = player.position.y + camOffsetY;
+            camera.position.z = player.position.z + camOffsetZ;
+            camera.lookAt(player.position);
+
+            renderer.render(scene, camera);
+        }
+
+        // Адаптация при изменении размера окна
+        window.addEventListener('resize', () => {
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Запуск игры
+        animate();
+    </script>
+</body>
+</html>
